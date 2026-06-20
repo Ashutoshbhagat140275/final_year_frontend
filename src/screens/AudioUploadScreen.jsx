@@ -9,7 +9,7 @@ import {
 } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import * as DocumentPicker from 'expo-document-picker'
-import { useAudioRecorder, RecordingPresets, AudioModule } from 'expo-audio'
+import Constants from 'expo-constants'
 import {
   getSpeakerEnrollStatus,
   getTrainingStatus,
@@ -40,9 +40,12 @@ export default function AudioUploadScreen({ navigation }) {
   const [trainingStatus, setTrainingStatus] = useState(null)
   const [trainingLoading, setTrainingLoading] = useState(false)
   const [trainingError, setTrainingError] = useState('')
-  const [isRecording, setIsRecording] = useState(false)
 
-  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
+  // expo-audio is a native module not bundled in Expo Go. Detect Expo Go so we can
+  // hide the recorder there and avoid loading the native module (see RecordingSection).
+  const isExpoGo =
+    Constants.executionEnvironment === 'storeClient' || Constants.appOwnership === 'expo'
+  const recordingSupported = !isExpoGo
 
   const loadEnrollmentStatus = async () => {
     setEnrollLoading(true)
@@ -87,26 +90,10 @@ export default function AudioUploadScreen({ navigation }) {
     }
   }
 
-  const startRecording = async () => {
-    const perm = await AudioModule.requestRecordingPermissionsAsync()
-    if (!perm.granted) {
-      Alert.alert('Permission required', 'Microphone access is needed to record audio.')
-      return
-    }
-    await audioRecorder.prepareToRecordAsync()
-    audioRecorder.record()
-    setIsRecording(true)
-  }
-
-  const stopRecording = async () => {
-    await audioRecorder.stop()
-    setIsRecording(false)
-    const uri = audioRecorder.uri
-    if (uri) {
-      setFile({ uri, name: `recording_${Date.now()}.m4a`, mimeType: 'audio/x-m4a' })
-      setError('')
-      setResult(null)
-    }
+  const handleRecorded = (recordedFile) => {
+    setFile(recordedFile)
+    setError('')
+    setResult(null)
   }
 
   const onUpload = async () => {
@@ -180,11 +167,17 @@ export default function AudioUploadScreen({ navigation }) {
         </View>
 
         <Text style={styles.subsectionTitle}>Record Audio</Text>
-        <AppButton
-          title={isRecording ? 'Stop Recording' : 'Start Recording'}
-          onPress={isRecording ? stopRecording : startRecording}
-          style={styles.mb}
-        />
+        {recordingSupported ? (
+          <RecordingSection onRecorded={handleRecorded} />
+        ) : (
+          <View style={[styles.recordUnavailable, styles.mb]}>
+            <Text style={styles.muted}>
+              In-app recording isn't available in Expo Go. Build a development client
+              (or EAS build) to enable microphone recording. You can still pick and
+              upload an audio file below.
+            </Text>
+          </View>
+        )}
 
         <Text style={styles.subsectionTitle}>Pick Audio File</Text>
         <TouchableOpacity style={styles.dropZone} onPress={pickFile}>
@@ -326,6 +319,42 @@ export default function AudioUploadScreen({ navigation }) {
   )
 }
 
+// Isolated so the native expo-audio module is only required in a build that has it.
+// This component is never rendered in Expo Go, so the require() never executes there.
+function RecordingSection({ onRecorded }) {
+  const { useAudioRecorder, RecordingPresets, AudioModule } = require('expo-audio')
+  const [isRecording, setIsRecording] = useState(false)
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
+
+  const startRecording = async () => {
+    const perm = await AudioModule.requestRecordingPermissionsAsync()
+    if (!perm.granted) {
+      Alert.alert('Permission required', 'Microphone access is needed to record audio.')
+      return
+    }
+    await audioRecorder.prepareToRecordAsync()
+    audioRecorder.record()
+    setIsRecording(true)
+  }
+
+  const stopRecording = async () => {
+    await audioRecorder.stop()
+    setIsRecording(false)
+    const uri = audioRecorder.uri
+    if (uri) {
+      onRecorded({ uri, name: `recording_${Date.now()}.m4a`, mimeType: 'audio/x-m4a' })
+    }
+  }
+
+  return (
+    <AppButton
+      title={isRecording ? 'Stop Recording' : 'Start Recording'}
+      onPress={isRecording ? stopRecording : startRecording}
+      style={styles.mb}
+    />
+  )
+}
+
 const styles = StyleSheet.create({
   bg: { backgroundColor: COLORS.gray50 },
   container: { padding: SPACING.md },
@@ -366,6 +395,7 @@ const styles = StyleSheet.create({
   successText: { color: COLORS.green800, fontSize: 13 },
   warnBox: { backgroundColor: COLORS.yellow50, borderWidth: 1, borderColor: '#FCD34D', borderRadius: 6, padding: SPACING.sm },
   warnText: { color: '#92400E', fontSize: 13 },
+  recordUnavailable: { backgroundColor: COLORS.yellow50, borderWidth: 1, borderColor: '#FCD34D', borderRadius: 6, padding: SPACING.sm },
   picker: { height: 50, marginVertical: SPACING.sm },
   tableRow: { flexDirection: 'row' },
   tableHeaderRow: { borderBottomWidth: 1, borderBottomColor: COLORS.gray200 },
