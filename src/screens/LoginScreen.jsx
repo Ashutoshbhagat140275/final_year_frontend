@@ -7,7 +7,7 @@ import Card from '../components/Card'
 import { COLORS, SPACING } from '../theme'
 
 export default function LoginScreen({ navigation }) {
-  const { login, loading } = useAuth()
+  const { login, loading, enterPreview } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -58,6 +58,9 @@ export default function LoginScreen({ navigation }) {
               No account? <Text style={{ color: COLORS.primary }}>Register</Text>
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity onPress={enterPreview} style={styles.previewBtn}>
+            <Text style={styles.previewText}>Preview UI without backend →</Text>
+          </TouchableOpacity>
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -74,5 +77,13 @@ const styles = StyleSheet.create({
   label: { fontSize: 13, color: COLORS.gray600, marginBottom: 4 },
   mb: { marginBottom: SPACING.sm },
   link: { marginTop: SPACING.md, alignItems: 'center' },
-  linkText: { fontSize: 13, color: COLORS.gray600 }
+  linkText: { fontSize: 13, color: COLORS.gray600 },
+  previewBtn: {
+    marginTop: SPACING.md,
+    alignItems: 'center',
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.gray100
+  },
+  previewText: { fontSize: 13, color: COLORS.gray500 }
 })

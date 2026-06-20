@@ -9,7 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [userId, setUserId] = useState('')
   const [loading, setLoading] = useState(false)
   const [hydrating, setHydrating] = useState(true)
-  const isAuthenticated = Boolean(token)
+  const [preview, setPreview] = useState(false)
+  const isAuthenticated = Boolean(token) || preview
 
   useEffect(() => {
     AsyncStorage.multiGet(['access_token', 'user_id'])
@@ -57,14 +58,23 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  // Dev/demo helper: browse the app's screens without a backend or real login.
+  // API calls still fail (no valid token), so screens show their shells / empty
+  // states rather than real data — enough to preview the UI.
+  const enterPreview = () => {
+    setUserId('preview-user')
+    setPreview(true)
+  }
+
   const logout = () => {
     setToken('')
     setUserId('')
+    setPreview(false)
   }
 
   const value = useMemo(() => ({
-    token, userId, isAuthenticated, loading, hydrating, login, logout, register
-  }), [token, userId, isAuthenticated, loading, hydrating])
+    token, userId, isAuthenticated, loading, hydrating, login, logout, register, enterPreview
+  }), [token, userId, isAuthenticated, loading, hydrating, preview])
 
   return (
     <AuthContext.Provider value={value}>
