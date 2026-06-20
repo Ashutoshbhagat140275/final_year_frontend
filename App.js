@@ -29,6 +29,12 @@ function usePwaSetup() {
       meta.content = '#4F46E5'
       return meta
     })
+    ensureHead('meta[name="mobile-web-app-capable"]', () => {
+      const meta = document.createElement('meta')
+      meta.name = 'mobile-web-app-capable'
+      meta.content = 'yes'
+      return meta
+    })
     ensureHead('meta[name="apple-mobile-web-app-capable"]', () => {
       const meta = document.createElement('meta')
       meta.name = 'apple-mobile-web-app-capable'
