@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FlatList, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import DateTimePicker from '@react-native-community/datetimepicker'
+import { FlatList, StyleSheet, Text, View } from 'react-native'
 import { getEmotions, getStats } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import Card from '../components/Card'
 import AppButton from '../components/AppButton'
 import EmotionChart from '../components/EmotionChart'
+import DateField from '../components/DateField'
 import { COLORS, SPACING } from '../theme'
 
 export default function DashboardScreen({ navigation }) {
@@ -16,8 +16,6 @@ export default function DashboardScreen({ navigation }) {
   const [loading, setLoading] = useState(true)
   const [startDate, setStartDate] = useState(null)
   const [endDate, setEndDate] = useState(null)
-  const [showStartPicker, setShowStartPicker] = useState(false)
-  const [showEndPicker, setShowEndPicker] = useState(false)
 
   const formatDate = (d) => (d ? d.toISOString().slice(0, 19) : '')
 
@@ -121,37 +119,11 @@ export default function DashboardScreen({ navigation }) {
             <View style={styles.filtersRow}>
               <View style={styles.filterItem}>
                 <Text style={styles.filterLabel}>Start Date</Text>
-                <TouchableOpacity style={styles.dateBtn} onPress={() => setShowStartPicker(true)}>
-                  <Text style={styles.dateBtnText}>{startDate ? startDate.toLocaleDateString() : 'Any'}</Text>
-                </TouchableOpacity>
-                {showStartPicker && (
-                  <DateTimePicker
-                    value={startDate || new Date()}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'compact' : 'default'}
-                    onChange={(_, d) => {
-                      setShowStartPicker(Platform.OS === 'ios')
-                      if (d) setStartDate(d)
-                    }}
-                  />
-                )}
+                <DateField value={startDate} onChange={setStartDate} />
               </View>
               <View style={styles.filterItem}>
                 <Text style={styles.filterLabel}>End Date</Text>
-                <TouchableOpacity style={styles.dateBtn} onPress={() => setShowEndPicker(true)}>
-                  <Text style={styles.dateBtnText}>{endDate ? endDate.toLocaleDateString() : 'Any'}</Text>
-                </TouchableOpacity>
-                {showEndPicker && (
-                  <DateTimePicker
-                    value={endDate || new Date()}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'compact' : 'default'}
-                    onChange={(_, d) => {
-                      setShowEndPicker(Platform.OS === 'ios')
-                      if (d) setEndDate(d)
-                    }}
-                  />
-                )}
+                <DateField value={endDate} onChange={setEndDate} />
               </View>
               <AppButton title="Apply" onPress={load} />
             </View>
@@ -192,8 +164,6 @@ const styles = StyleSheet.create({
   filtersRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'flex-end', gap: SPACING.sm, marginBottom: SPACING.sm },
   filterItem: { flex: 1, minWidth: 100 },
   filterLabel: { fontSize: 11, color: COLORS.gray500, marginBottom: 2 },
-  dateBtn: { borderWidth: 1, borderColor: COLORS.gray300, borderRadius: 6, paddingVertical: 6, paddingHorizontal: 10 },
-  dateBtnText: { fontSize: 13, color: COLORS.gray700 },
   tableHeader: { flexDirection: 'row', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: COLORS.gray200 },
   headerCell: { fontSize: 12, fontWeight: '600', color: COLORS.gray600 },
   row: { flexDirection: 'row', paddingVertical: 8, paddingHorizontal: SPACING.md, borderBottomWidth: 1, borderBottomColor: COLORS.gray100, backgroundColor: COLORS.white },

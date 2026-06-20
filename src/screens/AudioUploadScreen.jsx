@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import {
   Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -41,11 +42,11 @@ export default function AudioUploadScreen({ navigation }) {
   const [trainingLoading, setTrainingLoading] = useState(false)
   const [trainingError, setTrainingError] = useState('')
 
-  // expo-audio is a native module not bundled in Expo Go. Detect Expo Go so we can
-  // hide the recorder there and avoid loading the native module (see RecordingSection).
+  // expo-audio is a native module not available on web or in Expo Go. Only show the
+  // recorder where the native module exists (dev/standalone build on a device).
   const isExpoGo =
     Constants.executionEnvironment === 'storeClient' || Constants.appOwnership === 'expo'
-  const recordingSupported = !isExpoGo
+  const recordingSupported = Platform.OS !== 'web' && !isExpoGo
 
   const loadEnrollmentStatus = async () => {
     setEnrollLoading(true)
@@ -172,9 +173,9 @@ export default function AudioUploadScreen({ navigation }) {
         ) : (
           <View style={[styles.recordUnavailable, styles.mb]}>
             <Text style={styles.muted}>
-              In-app recording isn't available in Expo Go. Build a development client
-              (or EAS build) to enable microphone recording. You can still pick and
-              upload an audio file below.
+              {Platform.OS === 'web'
+                ? 'In-app recording isn’t available in the web app. Use the file picker below to upload audio.'
+                : 'In-app recording isn’t available in Expo Go. Build a development client (or EAS build) to enable microphone recording. You can still pick and upload an audio file below.'}
             </Text>
           </View>
         )}
