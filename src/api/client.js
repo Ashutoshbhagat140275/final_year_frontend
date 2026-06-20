@@ -40,12 +40,24 @@ export const login = async (email, password) => {
   return data
 }
 
-export const uploadAudio = async (file) => {
+// Build a multipart upload that works on both native and web (PWA).
+// - Web: expo-document-picker gives a real `File` (file.file). Append it and let
+//   the browser set Content-Type WITH the multipart boundary (don't set it manually).
+// - Native: append the React Native descriptor { uri, name, type } and set the
+//   multipart Content-Type explicitly.
+const buildAudioUpload = (file) => {
   const formData = new FormData()
+  if (file?.file) {
+    formData.append('file', file.file, file.name)
+    return { formData, config: {} }
+  }
   formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType || 'audio/wav' })
-  const { data } = await api.post(ENDPOINTS.uploadAudio, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
+  return { formData, config: { headers: { 'Content-Type': 'multipart/form-data' } } }
+}
+
+export const uploadAudio = async (file) => {
+  const { formData, config } = buildAudioUpload(file)
+  const { data } = await api.post(ENDPOINTS.uploadAudio, formData, config)
   return data
 }
 
@@ -92,11 +104,8 @@ export const startSpeakerEnrollment = async () => {
 }
 
 export const uploadSpeakerEnrollmentClip = async (file) => {
-  const formData = new FormData()
-  formData.append('file', { uri: file.uri, name: file.name, type: file.mimeType || 'audio/wav' })
-  const { data } = await api.post(ENDPOINTS.speakerEnrollUpload, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  })
+  const { formData, config } = buildAudioUpload(file)
+  const { data } = await api.post(ENDPOINTS.speakerEnrollUpload, formData, config)
   return data
 }
 
